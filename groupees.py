@@ -93,7 +93,10 @@ class product(object):
 		self._con = con
 		self._name = product['bundle_name']
 		self._id = product['id']
-		self._user_id = product['user_id']
+		if product['gift_taker_id']:
+			self._user_id = product['gift_taker_id']
+		else:
+			self._user_id = product['user_id']
 
 	def reveal(self):
 		self._con._opener.addheaders = [('accept', '*/*')]
@@ -233,18 +236,45 @@ if __name__ == "__main__":
 	download_folder = input("Give folder for auto download (default is the current folder)\n")
 	if download_folder == "":
 		download_folder = "./"
+	mode = input("Mode? ([u]nattended/[i]nteractive/[s]elect)")
 	print("Revealing and downloading")
+
+	selections = []
+	if 's' in mode:
+		select_num = 0
+		for i in p:
+			select_num += 1
+			print("[{0}].Product: {1}".format(select_num, i.name))
+		selections = input("List numbers to download separated by commas:")
+		selections = selections.split(',')
+
+	num = 0
 	for i in p:
-		print("Product:")
-		print(i.name)
-		try:
-			if counts[i.name] == 1:
-				i.reveal()
+		num += 1
+		get_or_noget = 'n'
+
+		if 'u' in mode:
+			get_or_noget = 'y'
+
+		if selections:
+			if str(num) in selections:
+				print("You wanted me to download {0}.Product: {1}".format(select_num, i.name))
+				get_or_noget = 'y'
 			else:
-				print('not revealing ' + i.name)
-			# print(i.link_urls)
-			i.auto_download(download_folder)
-		except Exception as E:
-			print(i.name)
-			print(E)
+				continue
+		print("Product: {0}".format(i.name))
+		if 'i' in mode:
+			prompt = "Download {0}? (y/n)".format(i.name)
+			get_or_noget = input(prompt)
+		if 'y' in get_or_noget:
+			try:
+				if counts[i.name] == 1:
+					i.reveal()
+				else:
+					print('not revealing ' + i.name)
+				# print(i.link_urls)
+				i.auto_download(download_folder)
+			except Exception as E:
+				print(i.name)
+				print(E)
 	print("Stop")
